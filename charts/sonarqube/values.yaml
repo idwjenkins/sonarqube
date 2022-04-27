@@ -77,10 +77,10 @@ nginx:
   enabled: false
 
 ingress:
-  enabled: false
+  enabled: true
   # Used to create an Ingress record.
   hosts:
-    - name: sonarqube.your-org.com
+    - name: app-k8s-sonarqube-sonarqube-internal
       # Different clouds or configurations might need /* as the default path
       path: /
       # For additional control over serviceName and servicePort
@@ -88,9 +88,24 @@ ingress:
       # servicePort: somePort
       # the pathType can be one of the following values: Exact|Prefix|ImplementationSpecific(default)
       # pathType: ImplementationSpecific
-  annotations: {}
-  # kubernetes.io/ingress.class: nginx
-  # kubernetes.io/tls-acme: "true"
+  # annotations: https://kubernetes-sigs.github.io/aws-load-balancer-controller/v2.3/guide/ingress/annotations/
+  alb.ingress.kubernetes.io/scheme: internet-facing
+  alb.ingress.kubernetes.io/target-type: ip
+  alb.ingress.kubernetes.io/group.name: {{ .Values.sonarqube.ingress.groupname }}
+  alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+  spec:
+  rules:
+  - host: {{ .Values.sonarqube.ingress.host_public }}
+    http:
+      paths:
+      - pathType: Prefix
+        path: /
+        backend:
+          service:
+            name: app-k8s-sonarqube-sonarqube
+            port:
+              number: 9000
+  # kubernetes.io/tls-acme: internet-facing
   # This property allows for reports up to a certain size to be uploaded to SonarQube
   # nginx.ingress.kubernetes.io/proxy-body-size: "8m"
 
